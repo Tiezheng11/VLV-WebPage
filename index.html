@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vision-Language-Vision Auto-Encoder: Scalable Knowledge Distillation from Diffusion Models</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            color: black;
+            background-size: contain;
+            background-attachment: fixed;
+            background-position: center;
+            direction: ltr;
+        }
+        .hero {
+            text-align: center;
+            padding: 50px 0;
+            background-color: #fff;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+        }
+        .hero h1 {
+            font-size: 3.5em;
+            margin: 0.2em 0;
+            font-weight: bold;
+        }
+        .hero h2 {
+            font-size: 2.2em;
+            margin: 0.2em 0;
+            font-weight: normal;
+            line-height: 1.4;
+        }
+        .hero p {
+            font-size: 1.4em;
+            margin-bottom: 1em;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 0.9em;
+            color: white;
+            background-color: black;
+            border-radius: 30px;
+            text-decoration: none;
+        }
+        .button_green {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 0.9em;
+            color: black;
+            background-color: #76b900;
+            border-radius: 30px;
+            text-decoration: none;
+        }
+        .gallery-container {
+            max-width: 77%;
+            margin: 0 auto;
+            padding: 20px 0;
+        }
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 10px;
+        }
+        .gallery-item {
+            overflow: hidden;
+            aspect-ratio: 1;
+        }
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: transform 0.3s ease;
+        }
+        .gallery-item img:hover {
+            transform: scale(1.2);
+        }
+        /* Make all gallery items the same size */
+        .item1, .item2, .item3, .item4, .item5, .item6, .item7, .item8, .item9, .item10, .item11, .item12, .item13, .item14, .item15, .item16, .item17, .item18 { 
+            grid-column: span 3; 
+        }
+        #modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            flex-direction: column;
+            align-items: center;
+        }
+        #modal img {
+            margin: auto;
+            display: block;
+            max-width: 77%;
+            max-height: 77%;
+            object-fit: contain;
+        }
+        #modal-description {
+            color: white;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 1.2em;
+        }
+        .description {
+            font-family: Arial, sans-serif;
+            font-style: normal;
+            font-size: 17px;
+            line-height: 1.47;
+            color: #333;
+            letter-spacing: -0.022em;
+            font-weight: 400;
+            background-color: #fff;
+            padding: 20px 0;
+            text-align: center;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            box-shadow: 2px 4px 12px #00000054;
+        }
+        .description_noborder {
+            font-family: Arial, sans-serif;
+            font-style: normal;
+            font-size: 17px;
+            line-height: 1.47;
+            color: #333;
+            letter-spacing: -0.022em;
+            font-weight: 400;
+            background-color: #fff;
+            padding: 20px 0;
+            text-align: center;
+        }
+        .description-content {
+            max-width: 65%;
+            margin: 0 auto;
+            padding: 20px;
+            font-style: normal;
+            border-radius: 18px;
+        }
+        .description-content h2 {
+            display: block;
+            color: black;
+            font-size: 1.5em;
+            line-height: 1.125;
+            letter-spacing: .004em;
+            font-weight: 600;
+            text-align: left;
+            margin-block-start: 0.83em;
+            margin-block-end: 0.83em;
+            margin-inline-start: 0px;
+            margin-inline-end: 0px;
+            font-style: normal;
+        }
+        .description-content p {
+            font-size: 1.1em;
+            text-align: left;
+            font-weight: normal;
+        }
+        .citation {
+            font-family: Arial, sans-serif;
+            background-color: #fff;
+            color: black;
+            padding: 10px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .citation-content {
+            text-align: left;
+            border-radius: 15px;
+            font-size: 0.8em;
+            max-width: 80%;
+            margin: 0 auto;
+            margin-top: -30px;
+            padding: 0;
+            background-color: #f5f5f5;
+            overflow-x: auto;
+            overflow-y: hidden;
+            white-space: nowrap;
+        }
+        .citation-content h2 {
+            font-size: 2em;
+            text-align: left;
+            font-weight: normal;
+        }
+        .citation pre {
+            border-radius: 15px;
+            max-width: 90%;
+            text-align: left;
+        }
+        .footer {
+            background-color: #f5f5f5;
+            box-shadow: 2px 4px 12px #00000054;
+            color: #333;
+            padding: 20px;
+            text-align: center;
+            margin-top: -20px;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+        }
+        .footer a {
+            color: dodgerblue;
+            text-decoration: none;
+        }
+        .inserted-image {
+            max-width: 80%;
+            height: auto;
+            margin: 30px;
+            margin-top: 10px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px 3px #00000030;
+        }
+        .inserted-image-noshadow {
+            max-width: 30%;
+            margin-left: auto;
+            margin-right: auto;
+            border-radius: 10px;
+        }
+        .logo {
+            color: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            gap: 60px;
+        }
+        .data-table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .data-table th, .data-table td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        .data-table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+        .data-table .highlight {
+            background-color: #e8f5e8;
+            font-weight: bold;
+        }
+
+        /* Combination Demo Styles */
+        .combination-demo {
+            max-width: 90%;
+            margin: 30px auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .combination-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .combination-item {
+            position: relative;
+            cursor: pointer;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+
+        .combination-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .combination-item.selected {
+            border-color: #76b900;
+            box-shadow: 0 0 15px rgba(118, 185, 0, 0.5);
+        }
+
+
+
+        .combination-item img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: cover;
+            display: block;
+        }
+
+
+
+        .combination-result {
+            text-align: center;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            min-height: 200px;
+        }
+
+        .combination-result h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.5em;
+        }
+
+        .result-display {
+            margin-top: 20px;
+        }
+
+        .result-display img {
+            max-width: 100%;
+            max-height: 400px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .combination-info {
+            margin-top: 15px;
+            font-size: 1.1em;
+            color: #666;
+        }
+
+        .source-images-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .source-image-item {
+            text-align: center;
+            max-width: 300px;
+        }
+
+        .source-image-item img {
+            width: 100%;
+            max-width: 250px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 2px solid #ddd;
+        }
+
+
+
+        .combination-arrow {
+            font-size: 2em;
+            font-weight: bold;
+            color: #76b900;
+            padding: 0 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .gallery {
+                grid-auto-columns: 20px;
+                grid-auto-rows: 30px;
+                gap: 5px;
+            }
+            .gallery-container {
+                max-width: 85%;
+                padding: 10px 0;
+            }
+            .hero h1 {
+                font-size: 2.5em;
+            }
+            .hero h2 {
+                font-size: 1.8em;
+            }
+            .hero p {
+                font-size: 1em;
+            }
+            .description-content {
+                max-width: 92%;
+                padding: 10px;
+            }
+            .citation-content {
+                max-width: 92%;
+                padding: 10px;
+            }
+            .inserted-image {
+                max-width: 95%;
+                padding: 5px;
+            }
+            .inserted-image-noshadow {
+                max-width: 50%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .logo {
+                gap: 10px;
+            }
+            
+            .combination-demo {
+                max-width: 95%;
+                padding: 15px;
+            }
+            
+            .combination-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            
+            .combination-item img {
+                aspect-ratio: 1;
+            }
+            
+            .combination-result {
+                padding: 15px;
+                min-height: 150px;
+            }
+            
+            .combination-result h3 {
+                font-size: 1.3em;
+            }
+            
+            .result-display img {
+                max-height: 250px;
+            }
+            
+            .combination-info {
+                font-size: 1em;
+                margin-top: 10px;
+            }
+            
+            .source-images-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .source-image-item {
+                max-width: 100%;
+            }
+            
+            .source-image-item img {
+                max-width: 200px;
+                height: 150px;
+            }
+            
+
+            
+            .combination-arrow {
+                font-size: 1.5em;
+                padding: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1 style="margin: 0;">VLV</h1>
+        <h2>Vision-Language-Vision Auto-Encoder:<br>
+            Scalable Knowledge Distillation from Diffusion Models</h2>
+        <p>Building state-of-the-art Vision-Language Models with dramatically reduced costs</p>
+        <!-- Add author and institution information -->
+        <div style="margin-top: 20px; text-align: center;">
+            <p style="font-size: 1.3em; margin-bottom: 5px;">
+                <a href="https://tiezheng11.github.io/" target="_blank" style="color: #0d7bdb;">Tiezheng Zhang</a><sup>1</sup>,
+                <a href="https://openreview.net/profile?id=%7EYitong_Li5" target="_blank" style="color: #0d7bdb;">Yitong Li</a><sup>3</sup>,
+                <a href="https://sites.google.com/view/yu-cheng-chou" target="_blank" style="color: #0d7bdb;">Yu-cheng Chou</a><sup>1</sup>,
+                <a href="https://beckschen.github.io/" target="_blank" style="color: #0d7bdb;">Jieneng Chen</a><sup>1</sup>, 
+                <a href="https://www.cs.jhu.edu/~ayuille/" target="_blank" style="color: #0d7bdb;">Alan L. Yuille</a><sup>1</sup>,<br>
+                <a href="https://weichen582.github.io/" target="_blank" style="color: #0d7bdb;">Chen Wei</a><sup>2</sup>,
+                <a href="https://lambert-x.github.io/" target="_blank" style="color: #0d7bdb;">Junfei Xiao</a><sup>1*</sup>
+            </p>
+            <p style="font-size: 1.2em; color: #888;">
+                <sup>1</sup>Johns Hopkins University, <sup>2</sup>Rice University, <sup>3</sup>Tsinghua University
+                <br>
+                *Project co-lead
+            </p>
+        </div>
+        <div style="overflow: hidden; background-color: #fff;">
+            <div class="logo" style="padding: 12px;">
+                <a href="https://ccvl.jhu.edu/" style="text-decoration: none; font-size: 16px;">
+                <img src="./static/logo/JHU.logo_horizontal.blue.png" alt="Johns Hopkins University Logo" style="width: auto; height: 40px;">
+                </a>
+                <a href="https://www.tsinghua.edu.cn/en/" style="text-decoration: none; font-size: 16px;">
+                <img src="./static/logo/thu.jpg" alt="THU Logo" style="width: auto; height: 40px;">
+                </a>
+                <a href="https://rice.edu/" style="text-decoration: none; font-size: 16px;">
+                <img src="./static/logo/Rice_Shield_280_Blue.svg" alt="Rice University Logo" style="width: auto; height: 40px;">
+                </a>
+            </div>
+        </div>
+        
+        <a href="https://arxiv.org/abs/2504.06256" class="button">Arxiv</a>
+        <a href="https://github.com/Tiezheng11/VLV-Auto-Encoder-Official" class="button">Code</a>
+        <a href="https://huggingface.co/collections/Efficient-Large-Model/sana-673efba2a57ed99843f11f9e" class="button">Huggingface</a>
+    </div>
+
+
+
+    <div class="gallery-container">
+        <section class="gallery" id="gallery">
+            <div class="gallery-item item1"><img src="static/demo/sample_1.jpg" alt="Image 1" data-description="An eye-level, full shot shows a green couch with an orange cat and a white dog sitting on it. The couch is covered with a green throw blanket. The orange cat is sitting on the left side of the couch, looking to the left. The white dog is sitting on the right side of the couch, looking to the right. The dog has a red collar around its neck. The couch is in a room with green walls. There is a wooden bookshelf on the left side of the couch. The bookshelf is filled with books and other items. There is a lamp on the bookshelf. There is a framed picture on the wall above the couch. There is a red rug on the floor in front of the couch. There is a wooden table in front of the couch. The table is covered with papers and other items. The lighting in the room is bright. The mood of the image is cheerful. The colors in the image are bright and cheerful. The textures in the image are smooth and soft. The shadows in the image are soft and subtle. The overall atmosphere of the image is warm and inviting. The image is well-composed and visually appealing. The details in the image are clear and well-defined. The mood of the image is cheerful and inviting."></div>
+            <div class="gallery-item item2"><img src="static/demo/sample_2.jpg" alt="Image 2" data-description="A digitally rendered image shows a woman standing in a white, arched corridor, holding a red parasol. The woman is positioned on the right side of the frame, facing slightly towards the left. She is wearing a long-sleeved, white, high-waisted jumpsuit with a high collar. Her dark hair is pulled back, and she is wearing dark sunglasses. She holds the red parasol in her left hand, with her right hand resting on the jumpsuit. The corridor is made of white, corrugated panels that create a sense of depth and perspective. The floor of the corridor is also white and has a series of steps leading up to the woman. The lighting is soft and diffused, creating a clean and minimalist aesthetic. The overall mood is serene and elegant, with a touch of whimsy from the red parasol. There are no people or animals visible in the image. The colors are predominantly white and red, creating a striking contrast. The textures are smooth and reflective, giving the image a modern and futuristic feel. The shadows are soft and subtle, adding depth and dimension to the scene. The atmosphere is calm and peaceful, with a sense of luxury and sophistication. There are no actions taking place in the image. The focus is solely on the woman and the corridor. The image is well-composed, with the woman positioned in the center of the frame and the corridor creating a sense of depth and perspective."></div>
+            <div class="gallery-item item3"><img src="static/demo/sample_3.jpg" alt="Image 3" data-description="A close-up shot shows a hand holding a partially opened ceramic egg, revealing a miniature diorama inside. The egg is decorated with floral patterns in shades of yellow, red, blue, and green, and the texture of the eggshell is visible where it has been cracked open. The diorama features a miniature house with a balcony, a staircase leading up to it, and a small garden with a tree and flowers. Miniature figures of people and animals are scattered throughout the scene, adding to the charm of the diorama. The lighting is soft and warm, highlighting the details of the diorama and the texture of the eggshell. The background is blurred, creating a shallow depth of field that draws attention to the diorama. The overall mood is whimsical and nostalgic, evoking a sense of wonder and imagination. The hand holding the egg is fair-skinned, and the fingers are slightly curved around the egg."></div>
+            <div class="gallery-item item4"><img src="static/demo/sample_4.png" alt="Image 4" data-description="A close-up studio shot shows a gray tabby cat with an open mouth and wide eyes, positioned to the right of a partially visible white laptop on a pink surface. The cat's fur is a mix of gray and brown stripes, and its eyes are a warm brown color. The cat's mouth is open, revealing its pink tongue and teeth, and its expression is one of surprise or excitement. The laptop is partially visible on the left side of the frame, with only the top left corner of the screen showing. The background is a solid pink color. The lighting is bright and even, casting soft shadows on the cat's face and fur. The overall mood is playful and energetic. The texture of the cat's fur appears soft and fluffy, while the laptop screen looks smooth and reflective. The color palette is dominated by shades of pink and gray, creating a warm and inviting atmosphere. The composition of the shot is well-balanced, with the cat and laptop positioned in a way that draws the viewer's attention to the cat's expressive face."></div> 
+            <div class="gallery-item item5"><img src="static/demo/sample_5.png" alt="Image 5" data-description="The image shows a street scene with a mural on a building. The sky is a clear, bright blue, and the sun is shining brightly. The street is paved with asphalt, and there is a curb separating the street from the sidewalk. A wooden fence runs along the side of the street. The building behind the mural is a light beige color. The mural covers the entire front of the building, and it depicts a young girl with fair skin and dark hair. She is wearing a red dress and has a simple, cartoonish face. Above her head, there is a large, round structure made of pink flowers. The flowers are densely packed together, creating a full, round shape. The lighting is bright and even, and there are no strong shadows. The mood of the image is cheerful and whimsical. The colors are vibrant and saturated, and the overall atmosphere is bright and sunny. There are no people or animals visible in the image. The focus is on the mural and the surrounding street scene. The image is well-composed and visually appealing. The mood is cheerful and whimsical."></div>
+            <div class="gallery-item item6"><img src="static/demo/sample_6.png" alt="Image 6" data-description="A close-up, eye-level shot shows an orange cat wearing a straw hat and a light-colored bow tie, standing in front of a large, ornate stone building with palm trees in the background on a sunny day. The cat is positioned slightly to the right of the frame's center, with its front paws on the ground and its head turned slightly to the left, looking directly at the camera. The cat's fur is a mix of orange and white, and its eyes are large and round, giving it a curious expression. The straw hat sits atop its head, and the bow tie is neatly tied around its neck. The building in the background is a large, multi-storied structure with intricate architectural details, including pointed arches and decorative spires. The stone is a light beige color, and the building casts a shadow on the ground. In the foreground, there are several pigeons scattered around the cat, adding to the urban setting. The palm trees in the background are tall and slender, with green fronds swaying in the breeze. The sky is a clear, bright blue, and the lighting is bright and sunny, casting shadows on the ground and highlighting the textures of the stone building and the cat's fur. The overall mood of the image is playful and whimsical, with the cat's expression and the ornate building creating a sense of wonder and curiosity."></div>
+            <div class="gallery-item item7"><img src="static/demo/sample_7.png" alt="Image 7" data-description="A digital painting depicts a character from the Dragon Ball series standing in a desolate, post-apocalyptic landscape. The character is a purple-skinned Saiyan with long, pointed ears and yellow eyes, dressed in a traditional Saiyan outfit. The outfit consists of a dark blue tunic with gold trim and a dark blue skirt with a gold stripe down the center. The character's arms are crossed in front of their chest, and their legs are crossed at the ankles. The character is standing on a rocky, uneven surface that appears to be part of a ruined city. In the background, there are crumbling buildings and structures, suggesting a once-thriving civilization has been destroyed. The sky is a swirling mix of purples, blues, and pinks, with several large, glowing bubbles floating around the character. The lighting in the painting is dramatic, with bright highlights and deep shadows that create a sense of depth and atmosphere. The overall mood of the painting is somber and melancholic, reflecting the character's isolation and the desolation of the world around them. The colors are rich and vibrant, with a focus on shades of blue, purple, and gold. The texture of the painting is smooth and detailed, with a focus on the character's outfit and the ruined city in the background. The character is the focal point of the painting, and their posture and expression convey a sense of determination and resilience in the face of adversity."></div>
+            <div class="gallery-item item8"><img src="static/demo/sample_8.png" alt="Image 8" data-description="An eye-level, medium shot depicts an elephant standing on a sandy plain, with the Milky Way galaxy visible in the background. The elephant is positioned on the left side of the frame, facing away from the viewer. It has a grayish-brown coat, large ears, and a long, curved trunk. The elephant appears to be standing still, with its body slightly angled to the left. The sand beneath the elephant is a light tan color, and the ground is flat and smooth. In the background, the Milky Way galaxy is a bright, swirling mass of stars and dust. The stars are a mix of white, yellow, and blue, and they are scattered across the dark blue sky. The lighting in the image is soft and diffused, with no harsh shadows. The overall mood of the image is peaceful and serene, with a sense of wonder and awe at the beauty of the natural world. The texture of the elephant's coat appears rough and coarse, while the sand has a smooth, grainy texture. The Milky Way galaxy has a soft, ethereal quality, with a sense of mystery and wonder. The colors in the image are muted and earthy, with the gray of the elephant's coat and the tan of the sand contrasting against the bright stars of the galaxy. The lighting is soft and diffused, with no harsh shadows."></div>
+            <div class="gallery-item item9"><img src="static/demo/sample_9.png" alt="Image 9" data-description="The image shows a scenic view of a train station on a bright, sunny day. The train, a light blue color, is positioned on the right side of the frame, with its front facing towards the viewer. It is connected to a set of tracks that run horizontally across the lower part of the image. The tracks are marked with yellow stripes and are surrounded by a wooden fence. To the left of the train station, there is a wooden railing that separates the station area from the beach. The beach is visible in the background, with turquoise waves crashing against the shore. The sky is a clear blue, dotted with fluffy white clouds. Above the train station, there is a set of traffic lights mounted on a metal pole. The traffic lights are yellow and red, indicating the direction of the train. Power lines run overhead, connecting to the traffic lights and the train station. In the foreground, there are bicycles parked near the train station. The bicycles are a mix of colors, including red, blue, and black. The overall mood of the image is peaceful and serene. The bright colors and clear sky create a sense of warmth and happiness. The scene is well-lit, with the sunlight casting shadows on the ground. The textures of the wood, metal, and water are all visible, adding depth and detail to the image. The overall atmosphere is one of tranquility and natural beauty. The image is well-composed, with a clear focus on the train station and its surroundings."></div>
+            <div class="gallery-item item10"><img src="static/demo/sample_10.png" alt="Image 10" data-description="A close-up, eye-level shot shows a small, round, white character nestled among a cluster of colorful, spherical objects, all set against a bright blue sky dotted with fluffy white clouds. The white character has small, black eyes and a simple, curved black line for a mouth, giving it a gentle, friendly expression. It is surrounded by a variety of colorful spheres, including shades of orange, green, blue, purple, and light pink. The spheres have a soft, fuzzy texture, suggesting they might be made of felt or a similar material. The lighting is bright and even, casting soft shadows that add depth to the scene. The overall mood is cheerful and whimsical, evoking a sense of innocence and playfulness. The composition is tightly framed, drawing the viewer's attention to the white character in the center of the image. The background is slightly blurred, emphasizing the foreground elements and creating a sense of depth. The colors are vibrant and saturated, contributing to the playful and lighthearted atmosphere of the image. The textures of the spheres and the white character are smooth and soft, contrasting with the rougher texture of the background. The image is well-composed, with a clear focus on the white character and the colorful spheres, creating a visually appealing and engaging scene. The overall impression is one of warmth, happiness, and childlike wonder."></div>
+            <div class="gallery-item item11"><img src="static/demo/sample_11.png" alt="Image 11" data-description="A digital illustration depicts a group of characters from The Wizard of Oz walking through a field of tall, golden corn stalks, with a castle-like structure in the background under a cloudy sky. From left to right, the characters are: a scarecrow with a tall, pointed hat, a wizard with a pointed hat, a lion, and a cat. The scarecrow is dressed in a gray suit and has a bushy mustache. The wizard is dressed in a yellow robe and has a similar mustache. The lion is dressed in a straw costume and has a fierce expression. The cat is dressed in a gray suit with a green bow tie and has a surprised expression. The characters are walking forward, with their arms outstretched. The corn stalks are tall and golden, and the ground is covered in golden dust. The castle-like structure in the background is made of white and gray stone. The sky is overcast with white clouds. The lighting is soft and diffused, creating a warm and inviting atmosphere. The colors are muted and earthy, with a focus on gold, gray, and green. The overall mood is whimsical and magical. The illustration has a painterly style with visible brushstrokes and textures. The characters' expressions are expressive and engaging, drawing the viewer into the scene. The composition is well-balanced, with the characters positioned in the foreground and the castle-like structure in the background. The overall impression is one of wonder and adventure."></div>
+            <div class="gallery-item item12"><img src="static/demo/sample_12.png" alt="Image 12" data-description="A high-angle, full shot depicts a white cat wearing yellow sunglasses and a yellow Gucci swimsuit, holding a glass of red wine, floating in a pool of water. The cat is positioned in the center of the frame, lying on its stomach with its front paws resting on the yellow inflatable pool float. The cat's fur is white, and it wears a pair of bright yellow sunglasses and a yellow Gucci swimsuit with the brand logo visible on the chest. A gold chain necklace is draped around its neck. In its left paw, the cat holds a full glass of red wine. The pool is filled with clear, light blue water. The lighting is bright and sunny, casting soft shadows around the cat and the pool float. The overall mood is playful and whimsical, with a touch of luxury due to the Gucci brand. The background is blurred, focusing attention on the cat and the pool. The texture of the cat's fur appears soft and fluffy, contrasting with the smooth, inflatable surface of the pool float. The colors are vibrant, with the yellow of the cat and swimsuit standing out against the blue of the water and the white of the cat's fur. The atmosphere is relaxed and carefree, evoking a sense of summer fun. The image is well-composed, with the cat positioned in the center of the frame and the pool float providing a sense of depth. The lighting is bright and even, highlighting the colors and textures of the scene."></div>
+        </section>
+    </div>
+
+    <!-- The Modal -->
+    <div id="modal" onclick="this.style.display='none'">
+        <img id="modal-img" src="">
+        <div id="modal-description"></div>
+    </div>
+
+    <section class="description">
+        <div class="description-content">
+            <h2>About VLV</h2>
+            <p>We introduce the Vision-Language-Vision (VLV) auto-encoder framework, which strategically leverages key pretrained components: a vision encoder, the decoder of a Text-to-Image (T2I) diffusion model, and subsequently, a Large Language Model (LLM). We establish an information bottleneck by regularizing the language representation space, achieved through freezing the pretrained T2I diffusion decoder.</p>
+            
+            <p>Our VLV pipeline effectively distills knowledge from the text-conditioned diffusion model using continuous embeddings, demonstrating comprehensive semantic understanding via high-quality reconstructions. By fine-tuning a pretrained LLM to decode the intermediate language representations into detailed descriptions, we construct a state-of-the-art captioner comparable to leading models like GPT-4o and Gemini 2.0 Flash.</p>
+            
+            <p><strong>Key advantages:</strong></p>
+            <p>• <strong>Knowledge Distillation:</strong> Our method effectively distills knowledge from text-conditioned diffusion models using continuous embeddings without requiring paired image-text datasets.</p>
+            <p>• <strong>Scalable Framework:</strong> We introduce a novel framework that leverages a vision encoder, a frozen T2I diffusion decoder, and a Large Language Model to create an efficient information bottleneck.</p>
+            <p>• <strong>Cost Efficient:</strong> By primarily utilizing single-modal images and maximizing pretrained model utility, we keep total training expenditure under $1,000 USD—three orders of magnitude cheaper than comparable methods.</p>
+        </div>
+
+        <div>
+            <img src="static/img/framework.png" alt="VLV Framework" class="inserted-image">
+        </div>
+
+        <div class="description-content">
+            <h2>VLV Auto-Encoder Architecture</h2>
+            <p>The overall structure is auto-encoder, with three key components:</p>
+            <p>• <strong>VLV Encoder:</strong> A visual backbone augmented with a lightweight multi-modal adapter maps an input image into continuous caption embedding with compact semantic information.</p>
+            <p>• <strong>Diffusion Decoder:</strong> A frozen text-to-image diffusion model reconstructs the image.</p>
+            <p>• <strong>Caption Decoder:</strong> A pretrained large language model translates the same embedding into comprehensive captions.</p>
+            
+            <!-- <h2>Two-Stage Training Process</h2>
+            <p><strong>Stage-1:</strong> Our VLV encoder extracts continuous caption embeddings from images only. Training in Stage-1 is fully self-supervised: a frozen text-to-image diffusion model serves as the decoder, reconstructing the image from the caption embeddings.</p>
+            <p><strong>Stage-2:</strong> We fine-tune the VLV encoder from Stage-1, together with an LLM-based decoder that maps caption embeddings to natural-language captions. Since the caption embeddings are compact and encode only implicit semantics, we utilize a pretrained LLM to decode them into descriptive image captions.</p> -->
+        </div>
+    </section>
+    <section class="description_noborder">
+        <div class="description-content">
+            <h2>Dataset Construction</h2>
+            <p>We construct our training dataset through a carefully designed two-stage data collection pipeline:</p>
+            <p>• <strong>Stage-1 Data (40M images):</strong> We curate a 40M image subset from LAION-2B-en-aesthetic, a subset of LAION-5B. For training stability, we apply strict filtering criteria: images must have shorter side greater than 512 pixels, aspect ratio between 0.5 to 2.0, and watermark probability less than 0.5.</p>
+            <p>• <strong>Stage-2 Data (6M image-text pairs):</strong> We query Gemini 2.0 Flash to generate high-quality captions for 6M images from our Stage-1 dataset, producing aligned image-text pairs for fine-tuning the language decoder. Most captions contain 170-280 tokens (mean: 226.82 tokens).</p>
+            <p>• <strong>Efficient Data Usage:</strong> Despite using only 0.4% (40M / 10B) of the WebLI dataset used by De-Diffusion, our method learns strong language-oriented semantics through the vision-language-vision auto-encoding pipeline.</p>
+            <p>• <strong>Quality Control:</strong> Our filtering process ensures high-quality images with appropriate aspect ratios and minimal watermarks, while the caption generation process creates comprehensive, descriptive captions that capture spatial layout and fine-grained details.</p>
+        </div>
+
+        <div>
+            <img src="static/img/data_pipeline.png" alt="Data Pipeline" class="inserted-image">
+        </div>
+    </section>
+    <section class="description_noborder">
+        <div class="description-content">
+            <h2>Text-Conditioned Reconstruction Results</h2>
+            <p>We assess caption quality by feeding each decoded caption to <strong>Stable Diffusion 3.5 Medium</strong> and computing the Fréchet Inception Distance (FID) between the synthesized and original images on 30K samples from the MS-COCO 2014 validation split.</p>
+            
+            <p>Our captions are compared against state-of-the-art vision-language models: Florence-2, Qwen2.5-VL, Gemini 2.0 Flash, and GPT-4o. Image synthesis employs rectified flow-matching sampler using 40 inference steps and classifier-free guidance scales from 1.0 to 4.0.</p>
+            
+            <p><strong>Key Results:</strong></p>
+            <p>• <strong>Matches GPT-4o Performance:</strong> Our captions achieve an FID essentially indistinguishable from GPT-4o's (difference &lt;0.5) at guidance scale 2.0: VLV (6.64) vs GPT-4o (6.20)</p>
+            <p>• <strong>Outperforms Open-Source Models:</strong> Markedly better than Florence-2 (7.51) and Qwen2.5-VL (6.98), demonstrating superior caption quality among open-source alternatives</p>
+            <p>• <strong>Competitive with Commercial Models:</strong> Only the closed-source Gemini 2.0 Flash (5.87) attains a marginally better score, while we remain highly competitive</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Model</th>
+                        <th>Guidance 1.0</th>
+                        <th>Guidance 2.0</th>
+                        <th>Guidance 3.0</th>
+                        <th>Guidance 4.0</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="text-align: left;">Original (MS-COCO)</td>
+                        <td>16.62</td>
+                        <td>9.90</td>
+                        <td>12.69</td>
+                        <td>14.49</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left;">Florence-2 Large</td>
+                        <td class="highlight">10.61</td>
+                        <td>7.51</td>
+                        <td>9.95</td>
+                        <td>11.35</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left;">Qwen-2.5-VL-7B</td>
+                        <td>12.61</td>
+                        <td>6.98</td>
+                        <td>9.19</td>
+                        <td>10.59</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left;"><strong>VLV (Ours)</strong></td>
+                        <td>11.47</td>
+                        <td class="highlight">6.64</td>
+                        <td class="highlight">8.56</td>
+                        <td class="highlight">9.90</td>
+                    </tr>
+                    <tr style="color: #666;">
+                        <td style="text-align: left;">Gemini 2.0 Flash</td>
+                        <td>12.82</td>
+                        <td><strong>5.87</strong></td>
+                        <td><strong>7.57</strong></td>
+                        <td><strong>8.77</strong></td>
+                    </tr>
+                    <tr style="color: #666;">
+                        <td style="text-align: left;">GPT-4o</td>
+                        <td>12.16</td>
+                        <td>6.20</td>
+                        <td>7.96</td>
+                        <td>9.25</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="font-size: 0.9em; color: #666; margin-top: 10px; text-align: center;">
+                <strong>FID scores (↓ lower is better)</strong> on Stable Diffusion 3.5 Medium generations. 
+                <span style="background-color: #e8f5e8; padding: 2px 4px;">Highlighted</span> shows best open-source performance.
+                Commercial models (Gemini 2.0 Flash, GPT-4o) shown in gray for reference.
+            </p>
+        </div>
+
+        <div class="description-content">
+            <h2>Human Evaluation Results</h2>
+            <p>We also benchmark caption fidelity using human raters and VLM judges under a three-criterion rubric: <em>coverage</em>, <em>no hallucination</em>, and <em>spatial-layout consistency</em> on a 0-6 scale.</p>
+            
+            <p>VLV matches GPT-4o within &lt;0.05 points on the 0–6 scale and surpasses Qwen-2.5-VL-7B by 0.15 on average, confirming that our caption embeddings yield human-level captions while remaining competitive with the strongest commercial VLMs.</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: center;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="text-align: left;">Rater</th>
+                        <th>Qwen-2.5 VL 7B</th>
+                        <th>GPT-4o</th>
+                        <th>VLV (Ours)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="text-align: left;">Human 1</td>
+                        <td>4.88</td>
+                        <td><strong>5.32</strong></td>
+                        <td class="highlight">5.25</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left;">Human 2</td>
+                        <td>5.02</td>
+                        <td><strong>5.17</strong></td>
+                        <td class="highlight">5.04</td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left;">Human 3</td>
+                        <td>5.10</td>
+                        <td>5.12</td>
+                        <td class="highlight"><strong>5.22</strong></td>
+                    </tr>
+                    <tr>
+                        <td style="text-align: left;">Gemini 2.0 Flash</td>
+                        <td>5.07</td>
+                        <td><strong>5.25</strong></td>
+                        <td class="highlight">5.18</td>
+                    </tr>
+                    <tr style="border-top: 2px solid #333;">
+                        <td style="text-align: left;"><strong><em>Average</em></strong></td>
+                        <td><strong>5.02</strong></td>
+                        <td><strong>5.22</strong></td>
+                        <td class="highlight"><strong>5.17</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="font-size: 0.9em; color: #666; margin-top: 10px; text-align: center;">
+                <strong>Caption fidelity scores (0-6 scale, higher is better)</strong> from three human annotators and one automated system. 
+                <span style="background-color: #e8f5e8; padding: 2px 4px;">Highlighted</span> shows VLV performance.
+                <strong>Bold</strong> indicates best score per rater.
+            </p>
+        </div>
+
+        <div class="description-content">
+            <h2>Reconstruction with Language Semantics</h2>
+            <p>For each original input image (top), we feed its <em>caption embedding</em> directly to the frozen diffusion decoder and obtain a reconstruction (middle) that preserves <em>high-level semantics</em> and <em>fine-grained appearance cues</em>.</p>
+            
+            <p>The same embedding is then decoded by the LLM; prompting Midjourney with that caption yields an image of high fidelity, demonstrating that a single embedding suffices for both visual and textual regeneration.</p>
+            
+            <p><strong>Key Insights:</strong></p>
+            <p>• <strong>Dual-Purpose Embeddings:</strong> Our caption embeddings serve as a universal representation that can be decoded into both high-quality image reconstructions and comprehensive textual descriptions</p>
+            <p>• <strong>Semantic Preservation:</strong> The reconstructions maintain crucial visual details including object positioning, spatial relationships, and fine-grained appearance characteristics</p>
+            <p>• <strong>Cross-Modal Consistency:</strong> The same compact embedding generates visually consistent results whether used for image reconstruction or text-to-image generation with state-of-the-art models like Midjourney</p>
+        </div>
+
+        <div>
+            <img src="static/img/reconstruction.png" alt="Reconstruction Examples" class="inserted-image">
+        </div>
+
+        <div class="description-content">
+            <h2>Emergent Compositionality</h2>
+            <p>We investigate notable emergent properties manifested by the VLV auto-encoder. The learned embeddings encapsulate crucial semantic details, including object 3D pose and orientation, ensuring robust spatial consistency. Through concatenation of caption embeddings from disparate images, VLV demonstrates the capacity to seamlessly disentangle foreground objects from backgrounds and compose novel, coherent images.</p>
+            <p><strong>Interactive Demo:</strong> Click on any combined image below to see the two source images that were used to create it.</p>
+        </div>
+
+        <div class="combination-demo">
+            <div class="combination-grid">
+                <div class="combination-item" data-sources="1,5">
+                    <img src="static/img/combined_1_5.png" alt="Combined Image">
+                </div>
+                <div class="combination-item" data-sources="2,3">
+                    <img src="static/img/combined_2_3.png" alt="Combined Image">
+                </div>
+                <div class="combination-item" data-sources="3,4">
+                    <img src="static/img/combined_3_4.png" alt="Combined Image">
+                </div>
+                <div class="combination-item" data-sources="3,5">
+                    <img src="static/img/combined_3_5.png" alt="Combined Image">
+                </div>
+                <div class="combination-item" data-sources="5,6">
+                    <img src="static/img/combined_5_6.png" alt="Combined Image">
+                </div>
+                <div class="combination-item" data-sources="6,7">
+                    <img src="static/img/combined_6_7.png" alt="Combined Image">
+                </div>
+            </div>
+            
+            <div class="combination-result" id="combinationResult">
+                <h3>Source Images</h3>
+                <p>Click on a combined image above to see the source images</p>
+                <div class="result-display" id="resultDisplay"></div>
+            </div>
+        </div>
+
+        <!-- <div class="description-content">
+            <h2>Our Mission</h2>
+            <p>Our mission is to develop <strong>efficient, cost-effective, and scalable</strong> vision-language models that address practical challenges and deliver high-quality results with dramatically reduced training costs and data requirements.</p>
+        </div> -->
+
+        <div class="description-content">
+            <h2 class="title">BibTeX</h2>
+        </div>
+        <section class="citation" id="BibTeX">
+            <div class="citation-content">
+                <pre><code>@article{vlv2025,
+    title={Vision-Language-Vision Autoencoder: Scalable Knowledge Distillation from Diffusion Models},
+    author={Anonymous},
+    journal={Submitted to NeurIPS 2025},
+    year={2025}
+}</code></pre>
+            </div>
+        </section>
+    </section>
+
+    <!-- Footer Section -->
+    <footer class="footer">
+        <div class="container">
+            <div class="columns is-centered">
+                <div class="column is-8">
+                    <div class="content">
+                        <p>
+                            This website is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
+                                Commons Attribution-ShareAlike 4.0 International License</a>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- End Footer -->
+
+    <script>
+        // Function to open the modal and display the clicked image and description
+        function openModal(img) {
+            var modal = document.getElementById("modal");
+            var modalImg = document.getElementById("modal-img");
+            var modalDescription = document.getElementById("modal-description");
+
+            modal.style.display = "flex";
+            modalImg.src = img.src;
+            modalDescription.textContent = img.getAttribute('data-description');
+        }
+
+        // Add click event listeners to all images in the gallery with their descriptions
+        const images = document.querySelectorAll('.gallery-item img');
+        images.forEach((img) => {
+            img.addEventListener('click', () => openModal(img));
+        });
+
+        // Combination Demo Logic - Show source images when clicking combined images
+        let selectedCombination = null;
+
+        function showSourceImages(sources) {
+            const sourceIds = sources.split(',');
+            const id1 = sourceIds[0];
+            const id2 = sourceIds[1];
+            
+            const resultDisplay = document.getElementById('resultDisplay');
+            const combinationResult = document.getElementById('combinationResult');
+            
+            resultDisplay.innerHTML = `
+                                 <div class="source-images-container">
+                     <div class="source-image-item">
+                         <img src="static/img/combine${id1}.png" alt="Source Image">
+                     </div>
+                     <div class="combination-arrow">+</div>
+                     <div class="source-image-item">
+                         <img src="static/img/combine${id2}.png" alt="Source Image">
+                     </div>
+                 </div>
+                                 <div class="combination-info">
+                     <strong>Source Images</strong>
+                     <br>
+                     <em>These two images were combined using VLV's caption embedding concatenation to create the selected combined image above.</em>
+                 </div>
+            `;
+            
+            combinationResult.querySelector('h3').textContent = 'Source Images';
+            combinationResult.querySelector('p').textContent = 'Caption embeddings from these images were combined!';
+        }
+
+        function resetCombinationSelection() {
+            selectedCombination = null;
+            document.querySelectorAll('.combination-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            
+            const resultDisplay = document.getElementById('resultDisplay');
+            const combinationResult = document.getElementById('combinationResult');
+            resultDisplay.innerHTML = '';
+            combinationResult.querySelector('h3').textContent = 'Source Images';
+            combinationResult.querySelector('p').textContent = 'Click on a combined image above to see the source images';
+        }
+
+        // Add click event listeners to combination items
+        document.querySelectorAll('.combination-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const sources = this.getAttribute('data-sources');
+                
+                // Remove previous selection
+                document.querySelectorAll('.combination-item').forEach(item => {
+                    item.classList.remove('selected');
+                });
+                
+                // Add selection to current item
+                this.classList.add('selected');
+                selectedCombination = sources;
+                
+                // Show source images
+                showSourceImages(sources);
+            });
+        });
+
+        // Add double-click to reset
+        document.querySelector('.combination-result').addEventListener('dblclick', resetCombinationSelection);
+    </script>
+</body>
+</html>
