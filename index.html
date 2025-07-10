@@ -494,7 +494,7 @@
         <div style="overflow: hidden; background-color: #fff;">
             <div class="logo" style="padding: 12px;">
                 <a href="https://ccvl.jhu.edu/" style="text-decoration: none; font-size: 16px;">
-                <img src="./static/logo/JHU.logo_horizontal.blue.png" alt="Johns Hopkins University Logo" style="width: auto; height: 40px;">
+                <img src="./static/logo/JHU.logo_vertical.blue.svg" alt="Johns Hopkins University Logo" style="width: auto; height: 40px;">
                 </a>
                 <a href="https://www.tsinghua.edu.cn/en/" style="text-decoration: none; font-size: 16px;">
                 <img src="./static/logo/thu.jpg" alt="THU Logo" style="width: auto; height: 40px;">
@@ -505,11 +505,11 @@
             </div>
         </div>
         
-        <a href="https://arxiv.org/abs/2504.06256" class="button">Arxiv</a>
+        <a href="https://arxiv.org/pdf/2507.07104" class="button">Arxiv</a>
         <a href="https://github.com/Tiezheng11/VLV-Auto-Encoder-Official" class="button">Code</a>
-        <a href="https://huggingface.co/collections/Efficient-Large-Model/sana-673efba2a57ed99843f11f9e" class="button">Huggingface</a>
+        <a href="https://huggingface.co/ccvl/Vision-Language-Vision" class="button">Dataset</a>
+        <a href="https://huggingface.co/datasets/ccvl/Vision-Language-Vision-Dataset" class="button">Huggingface</a>
     </div>
-
 
 
     <div class="gallery-container">
@@ -558,10 +558,6 @@
             <p>• <strong>VLV Encoder:</strong> A visual backbone augmented with a lightweight multi-modal adapter maps an input image into continuous caption embedding with compact semantic information.</p>
             <p>• <strong>Diffusion Decoder:</strong> A frozen text-to-image diffusion model reconstructs the image.</p>
             <p>• <strong>Caption Decoder:</strong> A pretrained large language model translates the same embedding into comprehensive captions.</p>
-            
-            <!-- <h2>Two-Stage Training Process</h2>
-            <p><strong>Stage-1:</strong> Our VLV encoder extracts continuous caption embeddings from images only. Training in Stage-1 is fully self-supervised: a frozen text-to-image diffusion model serves as the decoder, reconstructing the image from the caption embeddings.</p>
-            <p><strong>Stage-2:</strong> We fine-tune the VLV encoder from Stage-1, together with an LLM-based decoder that maps caption embeddings to natural-language captions. Since the caption embeddings are compact and encode only implicit semantics, we utilize a pretrained LLM to decode them into descriptive image captions.</p> -->
         </div>
     </section>
     <section class="description_noborder">
@@ -772,12 +768,12 @@
         </div>
         <section class="citation" id="BibTeX">
             <div class="citation-content">
-                <pre><code>@article{vlv2025,
-    title={Vision-Language-Vision Autoencoder: Scalable Knowledge Distillation from Diffusion Models},
-    author={Anonymous},
-    journal={Submitted to NeurIPS 2025},
-    year={2025}
-}</code></pre>
+                <pre><code>@article{zhang2025vision,
+                    title     = {Vision-Language-Vision Auto-Encoder: Scalable Knowledge Distillation from Diffusion Models},
+                    author    = {Zhang, Tiezheng and Li, Yitong and Chou, Yu-Cheng and Chen, Jieneng and Yuille, Alan and Wei, Chen and Xiao, Junfei},
+                    journal   = {arXiv preprint arXiv:2507.07104},
+                    year      = {2025}
+                  }</code></pre>
             </div>
         </section>
     </section>
